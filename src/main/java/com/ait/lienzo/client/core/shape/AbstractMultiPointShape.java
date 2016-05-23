@@ -48,326 +48,278 @@ import com.ait.lienzo.shared.core.types.ShapeType;
 import com.ait.tooling.nativetools.client.event.HandlerRegistrationManager;
 import com.google.gwt.json.client.JSONObject;
 
-public abstract class AbstractMultiPointShape<T extends AbstractMultiPointShape<T> & IMultiPointShape<T>> extends Shape<T>implements IMultiPointShape<T>
-{
-    private final PathPartList m_list = new PathPartList();
+public abstract class AbstractMultiPointShape<T extends AbstractMultiPointShape<T> & IMultiPointShape<T>> extends Shape<T> implements IMultiPointShape<T> {
+	private final PathPartList m_list = new PathPartList();
 
-    protected AbstractMultiPointShape(final ShapeType type)
-    {
-        super(type);
-    }
+	protected AbstractMultiPointShape(final ShapeType type) {
+		super(type);
+	}
 
-    protected AbstractMultiPointShape(final ShapeType type, final JSONObject node, final ValidationContext ctx) throws ValidationException
-    {
-        super(type, node, ctx);
-    }
+	protected AbstractMultiPointShape(final ShapeType type, final JSONObject node, final ValidationContext ctx) throws ValidationException {
+		super(type, node, ctx);
+	}
 
-    public PathPartList getPathPartList()
-    {
-        return m_list;
-    }
-    
-    @Override
-    public boolean isControlPointShape()
-    {
-        return false;
-    }
+	public PathPartList getPathPartList() {
+		return m_list;
+	}
 
-    @Override
-    public IMultiPointShape<?> asMultiPointShape()
-    {
-        return this;
-    }
+	@Override
+	public boolean isControlPointShape() {
+		return false;
+	}
 
-    @Override
-    public IOffsetMultiPointShape<?> asOffsetMultiPointShape()
-    {
-        return null;
-    }
+	@Override
+	public IMultiPointShape<?> asMultiPointShape() {
+		return this;
+	}
 
-    @Override
-    public IDirectionalMultiPointShape<?> asDirectionalMultiPointShape()
-    {
-        return null;
-    }
+	@Override
+	public IOffsetMultiPointShape<?> asOffsetMultiPointShape() {
+		return null;
+	}
 
-    @Override
-    public IControlHandleFactory getControlHandleFactory()
-    {
-        IControlHandleFactory factory = super.getControlHandleFactory();
+	@Override
+	public IDirectionalMultiPointShape<?> asDirectionalMultiPointShape() {
+		return null;
+	}
 
-        if (null != factory)
-        {
-            return factory;
-        }
-        return new DefaultMultiPointShapeHandleFactory(this);
-    }
+	@Override
+	public IControlHandleFactory getControlHandleFactory() {
+		IControlHandleFactory factory = super.getControlHandleFactory();
 
-    private static final class DefaultMultiPointShapeHandleFactory implements IControlHandleFactory
-    {
-        private final AbstractMultiPointShape<?> m_shape;
+		if (null != factory) {
+			return factory;
+		}
+		return new DefaultMultiPointShapeHandleFactory(this);
+	}
 
-        private DragMode                         m_dmode = DragMode.SAME_LAYER;
+	private static final class DefaultMultiPointShapeHandleFactory implements IControlHandleFactory {
+		private final AbstractMultiPointShape<?> m_shape;
 
-        private DefaultMultiPointShapeHandleFactory(final AbstractMultiPointShape<?> shape)
-        {
-            m_shape = shape;
-        }
+		private DragMode m_dmode = DragMode.SAME_LAYER;
 
-        @Override
-        public Map<ControlHandleType, IControlHandleList> getControlHandles(ControlHandleType... types)
-        {
-            return getControlHandles(Arrays.asList(types));
-        }
+		private DefaultMultiPointShapeHandleFactory(final AbstractMultiPointShape<?> shape) {
+			m_shape = shape;
+		}
 
-        @Override
-        public Map<ControlHandleType, IControlHandleList> getControlHandles(final List<ControlHandleType> types)
-        {
-            if ((null == types) || (types.isEmpty()))
-            {
-                return null;
-            }
-            if (false == types.contains(ControlHandleStandardType.POINT) && false == types.contains(ControlHandleStandardType.HANDLE))
-            {
-                return null;
-            }
-            HashMap<ControlHandleType, IControlHandleList> map = new HashMap<ControlHandleType, IControlHandleList>();
-            
-            for (ControlHandleType type : types)
-            {
-                if (type == ControlHandleStandardType.HANDLE)
-                {
-                    IControlHandleList chList = getPointHandles();
-                    
-                    map.put(IControlHandle.ControlHandleStandardType.HANDLE, chList);
-                }
-                else if (type == ControlHandleStandardType.POINT)
-                {
-                    IControlHandleList chList = getPointHandles();
-                    
-                    map.put(IControlHandle.ControlHandleStandardType.POINT, chList);
-                }
-            }
-            return map;
-        }
+		@Override
+		public Map<ControlHandleType, IControlHandleList> getControlHandles(ControlHandleType... types) {
+			return getControlHandles(Arrays.asList(types));
+		}
 
-        private IControlHandleList getPointHandles()
-        {
-            final ControlHandleList chlist = new ControlHandleList();
-            
-            HandlerRegistrationManager manager = chlist.getHandlerRegistrationManager();
+		@Override
+		public Map<ControlHandleType, IControlHandleList> getControlHandles(final List<ControlHandleType> types) {
+			if ((null == types) || (types.isEmpty())) {
+				return null;
+			}
+			if (false == types.contains(ControlHandleStandardType.POINT) && false == types.contains(ControlHandleStandardType.HANDLE)) {
+				return null;
+			}
+			HashMap<ControlHandleType, IControlHandleList> map = new HashMap<ControlHandleType, IControlHandleList>();
 
-            ShapeXorYChanged shapeXoYChangedHandler = new ShapeXorYChanged(m_shape, chlist);
-            
-            manager.register(m_shape.addNodeDragStartHandler(shapeXoYChangedHandler));
-            
-            manager.register(m_shape.addNodeDragMoveHandler(shapeXoYChangedHandler));
-            
-            manager.register(m_shape.addNodeDragEndHandler(shapeXoYChangedHandler));
+			for (ControlHandleType type : types) {
+				if (type == ControlHandleStandardType.HANDLE) {
+					IControlHandleList chList = getPointHandles();
 
-            for (Point2D point : m_shape.getPoint2DArray())
-            {
-                final Point2D p = point;
+					map.put(IControlHandle.ControlHandleStandardType.HANDLE, chList);
+				} else if (type == ControlHandleStandardType.POINT) {
+					IControlHandleList chList = getPointHandles();
 
-                final Circle prim = new Circle(9).setFillColor(ColorName.RED).setFillAlpha(0.4).setX(m_shape.getX() + p.getX()).setY(m_shape.getY() + p.getY()).setDraggable(true).setDragMode(m_dmode).setStrokeColor(ColorName.BLACK).setStrokeWidth(2);
+					map.put(IControlHandle.ControlHandleStandardType.POINT, chList);
+				}
+			}
+			return map;
+		}
 
-                chlist.add(new AbstractPointControlHandle()
-                {
-                    private static final long serialVersionUID = -1839635043082960976L;
+		private IControlHandleList getPointHandles() {
+			final ControlHandleList chlist = new ControlHandleList();
 
-                    @Override
-                    public AbstractPointControlHandle init()
-                    {
-                        ControlXorYChanged handler = new ControlXorYChanged(chlist, m_shape, p, prim, this, m_shape.getLayer());
-                        
-                        register(prim.addNodeDragMoveHandler(handler));
-                        
-                        register(prim.addNodeDragStartHandler(handler));
-                        
-                        register(prim.addNodeDragEndHandler(handler));
+			HandlerRegistrationManager manager = chlist.getHandlerRegistrationManager();
 
-                        setPoint(p);
-                        
-                        return this;
-                    }
+			ShapeXorYChanged shapeXoYChangedHandler = new ShapeXorYChanged(m_shape, chlist);
 
-                    @Override
-                    public IPrimitive<?> getControl()
-                    {
-                        return prim;
-                    }
+			manager.register(m_shape.addNodeDragStartHandler(shapeXoYChangedHandler));
 
-                    @Override
-                    public void destroy()
-                    {
-                        super.destroy();
-                    }
-                }.init());
-            }
-            return chlist;
-        }
-    }
+			manager.register(m_shape.addNodeDragMoveHandler(shapeXoYChangedHandler));
 
-    public static class ShapeXorYChanged implements AttributesChangedHandler, NodeDragStartHandler, NodeDragMoveHandler, NodeDragEndHandler
-    {
-        private IControlHandleList m_handleList;
+			manager.register(m_shape.addNodeDragEndHandler(shapeXoYChangedHandler));
 
-        private Shape<?>           m_shape;
+			for (Point2D point : m_shape.getPoint2DArray()) {
+				final Point2D p = point;
 
-        private boolean            m_dragging;
+				final Circle prim = new Circle(9).setFillColor(ColorName.RED).setFillAlpha(0.4).setX(m_shape.getX() + p.getX()).setY(m_shape.getY() + p.getY())
+						.setDraggable(true).setDragMode(m_dmode).setStrokeColor(ColorName.BLACK).setStrokeWidth(2);
 
-        public ShapeXorYChanged(Shape<?> shape, IControlHandleList handleList)
-        {
-            m_shape = shape;
-            
-            m_handleList = handleList;
-        }
+				chlist.add(new AbstractPointControlHandle() {
+					private static final long serialVersionUID = -1839635043082960976L;
 
-        @Override
-        public void onNodeDragMove(NodeDragMoveEvent event)
-        {
-            shapeMoved();
-        }
+					@Override
+					public AbstractPointControlHandle init() {
+						ControlXorYChanged handler = new ControlXorYChanged(chlist, m_shape, p, prim, this, m_shape.getLayer());
 
-        @Override
-        public void onNodeDragStart(NodeDragStartEvent event)
-        {
-            m_dragging = true;
-        }
+						register(prim.addNodeDragMoveHandler(handler));
 
-        @Override
-        public void onAttributesChanged(AttributesChangedEvent event)
-        {
-            if (!m_dragging && event.all(Attribute.X, Attribute.Y))
-            {
-                shapeMoved();
-            }
-        }
+						register(prim.addNodeDragStartHandler(handler));
 
-        @Override
-        public void onNodeDragEnd(NodeDragEndEvent event)
-        {
-            m_dragging = false;
-        }
+						register(prim.addNodeDragEndHandler(handler));
 
-        private void shapeMoved()
-        {
-            for (IControlHandle handle : m_handleList)
-            {
-                Point2D p = ((AbstractPointControlHandle) handle).getPoint();
-                
-                handle.getControl().setX(m_shape.getX() + p.getX());
-                
-                handle.getControl().setY(m_shape.getY() + p.getY());
-            }
-            m_shape.getLayer().batch();
-        }
-    }
+						setPoint(p);
 
-    public static class ControlXorYChanged implements NodeDragStartHandler, NodeDragMoveHandler, NodeDragEndHandler
-    {
-        private Shape<?>                   m_prim;
+						return this;
+					}
 
-        private AbstractPointControlHandle m_handle;
+					@Override
+					public IPrimitive<?> getControl() {
+						return prim;
+					}
 
-        private Point2D                    m_point;
+					@Override
+					public void destroy() {
+						super.destroy();
+					}
+				}.init());
+			}
+			return chlist;
+		}
+	}
 
-        private IControlHandleList         m_handleList;
+	public static class ShapeXorYChanged implements AttributesChangedHandler, NodeDragStartHandler, NodeDragMoveHandler, NodeDragEndHandler {
+		private IControlHandleList m_handleList;
 
-        private Shape<?>                   m_shape;
+		private Shape<?> m_shape;
 
-        private Layer                      m_layer;
+		private boolean m_dragging;
 
-        private boolean                    m_isDragging;
+		public ShapeXorYChanged(Shape<?> shape, IControlHandleList handleList) {
+			m_shape = shape;
 
-        public ControlXorYChanged(IControlHandleList handleList, Shape<?> shape, Point2D point, Shape<?> prim, AbstractPointControlHandle handle, Layer layer)
-        {
-            m_handleList = handleList;
-            
-            m_shape = shape;
-            
-            m_layer = layer;
-            
-            m_prim = prim;
-            
-            m_point = point;
-            
-            m_handle = handle;
-        }
+			m_handleList = handleList;
+		}
 
-        public Layer getLayer()
-        {
-            return m_layer;
-        }
-        
-        public boolean isDragging()
-        {
-            return m_isDragging;
-        }
+		@Override
+		public void onNodeDragMove(NodeDragMoveEvent event) {
+			shapeMoved();
+		}
 
-        @Override
-        public void onNodeDragStart(NodeDragStartEvent event)
-        {
-            m_isDragging = true;
+		@Override
+		public void onNodeDragStart(NodeDragStartEvent event) {
+			m_dragging = true;
+		}
 
-            if ((m_handle.isActive()) && (m_handleList.isActive()))
-            {
-                m_prim.setFillColor(ColorName.GREEN);
+		@Override
+		public void onAttributesChanged(AttributesChangedEvent event) {
+			if (!m_dragging && event.all(Attribute.X, Attribute.Y)) {
+				shapeMoved();
+			}
+		}
 
-                m_prim.getLayer().batch();
-            }
-        }
+		@Override
+		public void onNodeDragEnd(NodeDragEndEvent event) {
+			m_dragging = false;
+		}
 
-        @Override
-        public void onNodeDragEnd(NodeDragEndEvent event)
-        {
-            m_isDragging = false;
+		private void shapeMoved() {
+			for (IControlHandle handle : m_handleList) {
+				Point2D p = ((AbstractPointControlHandle) handle).getPoint();
 
-            if ((m_handle.isActive()) && (m_handleList.isActive()))
-            {
-                m_prim.setFillColor(ColorName.RED);
+				handle.getControl().setX(m_shape.getX() + p.getX());
 
-                m_prim.getLayer().batch();
-            }
-        }
+				handle.getControl().setY(m_shape.getY() + p.getY());
+			}
+			m_shape.getLayer().batch();
+		}
+	}
 
-        @Override
-        public void onNodeDragMove(NodeDragMoveEvent event)
-        {
-            if ((m_handle.isActive()) && (m_handleList.isActive()))
-            {
-                m_point.setX(m_prim.getX() - m_shape.getX());
+	public static class ControlXorYChanged implements NodeDragStartHandler, NodeDragMoveHandler, NodeDragEndHandler {
+		private Shape<?> m_prim;
 
-                m_point.setY(m_prim.getY() - m_shape.getY());
+		private AbstractPointControlHandle m_handle;
 
-                m_shape.refresh();
+		private Point2D m_point;
 
-                m_shape.getLayer().batch();
-            }
-        }
-    }
+		private IControlHandleList m_handleList;
 
-    @SuppressWarnings("serial")
-    private static abstract class AbstractPointControlHandle extends AbstractControlHandle
-    {
-        private Point2D m_point;
+		private Shape<?> m_shape;
 
-        public abstract AbstractPointControlHandle init();
+		private Layer m_layer;
 
-        public Point2D getPoint()
-        {
-            return m_point;
-        }
+		private boolean m_isDragging;
 
-        public void setPoint(Point2D point)
-        {
-            m_point = point;
-        }
+		public ControlXorYChanged(IControlHandleList handleList, Shape<?> shape, Point2D point, Shape<?> prim, AbstractPointControlHandle handle, Layer layer) {
+			m_handleList = handleList;
 
-        @Override
-        public final ControlHandleType getType()
-        {
-            return ControlHandleStandardType.POINT;
-        }
-    }
+			m_shape = shape;
+
+			m_layer = layer;
+
+			m_prim = prim;
+
+			m_point = point;
+
+			m_handle = handle;
+		}
+
+		public Layer getLayer() {
+			return m_layer;
+		}
+
+		public boolean isDragging() {
+			return m_isDragging;
+		}
+
+		@Override
+		public void onNodeDragStart(NodeDragStartEvent event) {
+			m_isDragging = true;
+
+			if ((m_handle.isActive()) && (m_handleList.isActive())) {
+				m_prim.setFillColor(ColorName.GREEN);
+
+				m_prim.getLayer().batch();
+			}
+		}
+
+		@Override
+		public void onNodeDragEnd(NodeDragEndEvent event) {
+			m_isDragging = false;
+
+			if ((m_handle.isActive()) && (m_handleList.isActive())) {
+				m_prim.setFillColor(ColorName.RED);
+
+				m_prim.getLayer().batch();
+			}
+		}
+
+		@Override
+		public void onNodeDragMove(NodeDragMoveEvent event) {
+			if ((m_handle.isActive()) && (m_handleList.isActive())) {
+				m_point.setX(m_prim.getX() - m_shape.getX());
+
+				m_point.setY(m_prim.getY() - m_shape.getY());
+
+				m_shape.refresh();
+
+				m_shape.getLayer().batch();
+			}
+		}
+	}
+
+	@SuppressWarnings("serial")
+	public static abstract class AbstractPointControlHandle extends AbstractControlHandle {
+		private Point2D m_point;
+
+		public abstract AbstractPointControlHandle init();
+
+		public Point2D getPoint() {
+			return m_point;
+		}
+
+		public void setPoint(Point2D point) {
+			m_point = point;
+		}
+
+		@Override
+		public final ControlHandleType getType() {
+			return ControlHandleStandardType.POINT;
+		}
+	}
 }
